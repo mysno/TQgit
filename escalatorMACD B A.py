@@ -20,7 +20,7 @@ from tqsdk import TargetPosTask, TqApi, TqBacktest, tafunc, TqSim
 from tqsdk.ta import MA, MACD
 
 # 设置合约
-SYMBOL = "CZCE.SR005"
+SYMBOL = "SHFE.rb2005"
 # 设置均线长短周期
 MA_SLOW, MA_FAST, EMA2_long = 8, 34, 55
 
