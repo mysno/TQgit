@@ -116,7 +116,7 @@ while True:
 
 
 
-
+#开仓策略如下：
     if api.is_changing(quote, "last_price"):#注意，测试一下换成K线变化的时候能不能下单，结果回测失败，这里不能用K线数据
         # 开仓判断
         if position.pos_long == 0 and position.pos_short == 0:
@@ -135,6 +135,7 @@ while True:
             #     print("最新价位:%.2f ，未满足开仓条件" % quote.last_price)
                 
 
+#下面是出场策略
         # 多头持仓止损策略
         elif position.pos_long > 0:
             if short_sellping() == 1 or long_sellping() ==1:
