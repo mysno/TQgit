@@ -33,28 +33,11 @@ quote = api.get_quote(SYMBOL)
 position = api.get_position(SYMBOL)
 target_pos = TargetPosTask(api, SYMBOL)
 
-
-# K线收盘价在这根K线波动范围函数
-# def kline_range(num):
-#     kl_range = (klines.iloc[num].close - klines.iloc[num].low) / (klines.iloc[num].high - klines.iloc[num].low)
-#     return kl_range
-
 #计算MACD
 macd = MACD(klines, 12, 26, 9)
 
 #计算EMA2的值，看看这个值是增长还是降低。来判断趋势的方向
 direction = tafunc.ema2(klines.close, EMA2_long)
-
-# 获取长短均线值
-# def ma_caculate(klines):
-#     ma_slow = MA(klines, MA_SLOW).iloc[-1].ma
-#     ma_fast = MA(klines, MA_FAST).iloc[-1].ma
-#     return ma_slow, ma_fast
-
-# ma_slow, ma_fast = ma_caculate(klines)
-# print("慢速均线为%.2f,快速均线为%.2f" % (ma_slow, ma_fast))
-
-
 
 while True:
     api.wait_update()

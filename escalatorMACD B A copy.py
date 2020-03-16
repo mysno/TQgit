@@ -14,6 +14,7 @@ __author__ = "Ringo"
 2020-3-13，再改一下。从更小周期的信号进入，但是到更大周期的趋势结束再出场。比如从小时周期的MACD进场，但是到日线趋势改变时候再出场。
 这个策略的思路是按1小时的macd进场，然后1小信号消失的时候，查看是不是在上个周期的信号依然是和1小时周期相反的
 如果相反则平仓，如果相同，则等待上个周期信号和相反。
+2020-3-16，这个思路似乎有点问题，两个周周期，每个周期2个指标，每个指标两个状态。要研究的状态有点多。这个策略似乎要废了。
 '''
 
 import pretty_errors
@@ -24,7 +25,7 @@ from tqsdk import TargetPosTask, TqApi, TqBacktest, tafunc, TqSim
 from tqsdk.ta import MA, MACD
 
 # 设置合约
-SYMBOL = "CZCE.SR005"
+SYMBOL = "SHFE.rb2005"
 # 设置均线长短周期
 MA_SLOW, MA_FAST, EMA2_long = 8, 34, 55
 
@@ -61,15 +62,15 @@ def short_sellopen(): #在小周期上开空仓
         return 0
 
 
-#小周期对平仓的设定,就是小周期的长期均线向上,但是macd变绿平多单;空头的条件相反.
+#小周期对平仓的设定,就是大周期的长期均线向上,但是macd变绿平多单;空头的条件相反，因为大周期的趋势不同，只能做个短线.
 def short_buyping():  # 在小周期上开多仓
-    if direction.iloc[-1] < direction.iloc[-2] and macd['bar'].iloc[-1] > 0:
+    if direction_long.iloc[-1] > direction_long.iloc[-2] and macd['bar'].iloc[-1] > 0:
         return 1
     else:
         return 0
 
 def short_sellping():  # 在小周期上开空仓
-    if direction.iloc[-1] > direction.iloc[-2] and macd['bar'].iloc[-1] < 0:
+    if direction_long.iloc[-1] < direction_long.iloc[-2] and macd['bar'].iloc[-1] < 0:
         return 1
     else:
         return 0
@@ -119,13 +120,14 @@ while True:
     if api.is_changing(quote, "last_price"):#注意，测试一下换成K线变化的时候能不能下单，结果回测失败，这里不能用K线数据
         # 开仓判断
         if position.pos_long == 0 and position.pos_short == 0:
-            if short_buyopen == 1:          # 开多头判断，小周期的MACD变红并且均线方向向上，
+            # 开多头判断，小周期的MACD变红并且均线方向向上，
+            if short_buyopen() == 1 and quote.last_price > klines.iloc[-2].high:
                 print("最新价为:%.2f 开多头" % quote.last_price)
                 target_pos.set_target_volume(1)
                 print(datetime.datetime.now())
 
             # 开空头判断，小周期的macd变绿并且均线方向向下，
-            elif short_sellopen == 1:
+            elif short_sellopen() == 1 and quote.last_price < klines.iloc[-2].low:
                 print("最新价为:%.2f 开空头" % quote.last_price)
                 target_pos.set_target_volume(-1)
                 print(datetime.datetime.now())
@@ -135,9 +137,7 @@ while True:
 
         # 多头持仓止损策略
         elif position.pos_long > 0:
-            # 在前三根根K线较低点减一跳，进行多头止损
-            kline_low = min(klines.iloc[-2].low, klines.iloc[-3].low, klines.iloc[-4].low)
-            if klines.iloc[-1].close <= kline_low - quote.price_tick or macd['bar'].iloc[-1] < 0:
+            if short_sellping() == 1 or long_sellping() ==1:
                 print("最新价为:%.2f,进行多头止损" % (quote.last_price))
                 target_pos.set_target_volume(0)
                 print(datetime.datetime.now())
@@ -146,9 +146,7 @@ while True:
 
         # 空头持仓止损策略
         elif position.pos_short > 0:
-            # 在三根K线较高点加一跳，进行空头止损
-            kline_high = max(klines.iloc[-2].high, klines.iloc[-3].high, klines.iloc[-4].high)
-            if klines.iloc[-1].close >= kline_high + quote.price_tick or macd['bar'].iloc[-1] > 0:
+            if short_buyping() == 1 or long_buyping() ==1:
                 print("最新价为:%.2f 进行空头止损" % quote.last_price)
                 target_pos.set_target_volume(0)
                 print(datetime.datetime.now())
