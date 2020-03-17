@@ -25,7 +25,7 @@ from tqsdk import TargetPosTask, TqApi, TqBacktest, tafunc, TqSim
 from tqsdk.ta import MA, MACD
 
 # 设置合约
-SYMBOL = "SHFE.rb2005"
+SYMBOL = "DCE.i2005"
 # 设置均线长短周期
 MA_SLOW, MA_FAST, EMA2_long = 8, 34, 55
 
@@ -76,15 +76,15 @@ def short_sellping():  # 在小周期上开空仓
         return 0
 
 
-#大周朝对平仓条件的配合.
-def long_sellping():
-    if direction_long.iloc[-1] > direction_long.iloc[-2] and macd_long['bar'].iloc[-1] < 0: #长期均线上行,但是macd变绿,卖平多仓
+#大周朝持仓条件的配合.
+def long_longposition():
+    if direction_long.iloc[-1] > direction_long.iloc[-2] and macd_long['bar'].iloc[-1] > 0: 
         return 1
     else:
         return 0
 
-def long_buyping():
-    if direction_long.iloc[-1] < direction_long.iloc[-2] and macd_long['bar'].iloc[-1] > 0:#长期均线下行,但是macd变红,买平空仓
+def long_shortposition():
+    if direction_long.iloc[-1] < direction_long.iloc[-2] and macd_long['bar'].iloc[-1] < 0:
         return 1
     else:
         return 0
@@ -136,9 +136,11 @@ while True:
                 
 
 #下面是出场策略
-        # 多头持仓止损策略
-        elif position.pos_long > 0:
-            if short_sellping() == 1 or long_sellping() ==1:
+        # 下面是多头持仓止损出场策略
+        elif position.pos_long > 0 and macd['bar'].iloc[-1] < 0:
+            if long_longposition ==1:
+                print("符合长期持仓条件,不动.")
+            else:
                 print("最新价为:%.2f,进行多头止损" % (quote.last_price))
                 target_pos.set_target_volume(0)
                 print(datetime.datetime.now())
@@ -146,8 +148,10 @@ while True:
             #     print("多头持仓，当前价格 %.2f,多头离场价格%.2f" % (quote.last_price, kline_low - quote.price_tick))
 
         # 空头持仓止损策略
-        elif position.pos_short > 0:
-            if short_buyping() == 1 or long_buyping() ==1:
+        elif position.pos_short > 0 and macd['bar'].iloc[-1] > 0:
+            if long_shortposition ==1:
+                print("符合长期持有空仓条件,不动安如山.")
+            else:
                 print("最新价为:%.2f 进行空头止损" % quote.last_price)
                 target_pos.set_target_volume(0)
                 print(datetime.datetime.now())
